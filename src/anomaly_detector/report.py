@@ -13,20 +13,83 @@ class AnomalyReport:
 
         lines = [
             f"{HEADER}{'='*70}{END}",
-            f"  {BOLD}ANOMALY REPORT{END}",
+            f"  {BOLD}DATA QUALITY AUDIT REPORT{END}",
             f"{HEADER}{'='*70}{END}",
             f"  Dataset: {self.df_shape[0]:,} rows × {self.df_shape[1]:,} columns",
             ""
         ]
 
-        # Sections 1-5 (Briefly outlined for the full file)
-        self._add_section(lines, "1] Anomalies Detected (Rare)", "rare_values", BLUE, END)
-        self._add_section(lines, "2] Null Values Detected", "null_values", BLUE, END)
-        self._add_section(lines, "3] Duplicates Detected", "duplicate_rows", BLUE, END)
-        self._add_section(lines, "4] Statistical Outliers (IQR)", "numerical_outliers", BLUE, END)
-        self._add_section(lines, "5] Type Inconsistency", "type_inconsistency", BLUE, END)
+        # --- [1] Anomalies Detected (Rare Values) ---
+        rv = self.findings.get("rare_values", [])
+        lines.append(f"{BLUE}1] Anomalies Detected (Rare Values){END}")
+        lines.append("-" * 70)
+        if not rv:
+            lines.append("  ✓ No rare values detected.")
+        else:
+            # Group by column for cleaner output
+            by_col = {}
+            for item in rv:
+                by_col.setdefault(item["column"], []).append(item)
+                
+            for col, items in by_col.items():
+                lines.append(f"  • Col: '{col}'")
+                for item in items:
+                    # Formatting strings to align beautifully and display proper %
+                    lines.append(f"    - {item['value']!r:<15} | Count: {item['count']:<4} | {item['pct']:.2f}%")
 
-        # --- [6] Logical Outliers (Detailed Version) ---
+        # --- [2] Null Values Detected ---
+        nv = self.findings.get("null_values", [])
+        lines.append(f"\n{BLUE}2] Null Values Detected{END}")
+        lines.append("-" * 70)
+        if not nv:
+            lines.append("  ✓ No high null-rate columns detected.")
+        else:
+            for item in nv:
+                lines.append(f"  • '{item['column']}': {YEL}{item['null_pct']:.1f}% missing{END} ({item['null_count']} rows)")
+
+        # --- [3] Duplicates Detected ---
+        dv = self.findings.get("duplicate_rows", [])
+        lines.append(f"\n{BLUE}3] Duplicates Detected{END}")
+        lines.append("-" * 70)
+        if not dv:
+            lines.append("  ✓ No duplicate rows detected.")
+        else:
+            lines.append(f"  {YEL}Found {len(dv)} distinct duplicated records:{END}")
+            for i, item in enumerate(dv[:5], 1): # Show top 5 groups
+                attr_str = ", ".join([f"{k}: {v}" for k, v in item['attributes'].items()])
+                if len(attr_str) > 65: attr_str = attr_str[:62] + "..."
+                lines.append(f"  {i}. {attr_str}")
+                lines.append(f"     ↳ {item['occurrences']} occurrences at rows: {item['row_indices']}")
+            if len(dv) > 5:
+                lines.append(f"  ... and {len(dv) - 5} more duplicated groups.")
+
+        # --- [4] Statistical Outliers (IQR) ---
+        so = self.findings.get("numerical_outliers", [])
+        lines.append(f"\n{BLUE}4] Statistical Outliers (IQR Method){END}")
+        lines.append("-" * 70)
+        if not so:
+            lines.append("  ✓ No statistical outliers detected.")
+        else:
+            for item in so:
+                lines.append(f"  • '{item['column']}' ({item['count']} outliers found)")
+                # Format numbers with commas (e.g. 50,000)
+                lines.append(f"    - Expected Normal Range: {item['bounds'][0]:,} to {item['bounds'][1]:,}")
+                
+                # Create a clean string of the outliers and their rows
+                outlier_strs = [f"{d['val']:,} (Row {d['row']})" for d in item['details']]
+                lines.append(f"    - Outliers Detected: {', '.join(outlier_strs)}")
+
+        # --- [5] Type Inconsistency ---
+        ti = self.findings.get("type_inconsistency", [])
+        lines.append(f"\n{BLUE}5] Type Inconsistency{END}")
+        lines.append("-" * 70)
+        if not ti:
+            lines.append("  ✓ All columns have consistent data types.")
+        else:
+            for item in ti:
+                lines.append(f"  • Col: '{item['column']}' | Mixed types: {YEL}{item['types_found']}{END}")
+
+        # --- [6] Logical Outliers ---
         lo = self.findings.get("logical_outliers", [])
         lines.append(f"\n{BLUE}6] Logical Outliers (Rule Violations){END}")
         lines.append("-" * 70)
@@ -35,26 +98,13 @@ class AnomalyReport:
         else:
             for item in lo:
                 lines.append(f"  • Col: '{item['column']}' | {RED}{item['issue']}{END} (Total: {item['count']})")
-                for detail in item['details']:
+                for detail in item['details'][:5]:
                     lines.append(f"    - Row {detail['row']:>4}: {detail['val']!r}")
-                
-                if item['count'] > 10:
-                    lines.append(f"    ... and {item['count'] - 10} more.")
+                if item['count'] > 5:
+                    lines.append(f"    ... and {item['count'] - 5} more.")
 
         lines.append(f"\n{HEADER}{'='*70}{END}")
         return "\n".join(lines)
-
-    def _add_section(self, lines, title, key, color, end):
-        """Helper to keep the summary clean."""
-        data = self.findings.get(key, [])
-        lines.append(f"\n{color}{title}{end}")
-        lines.append("-" * 70)
-        if not data:
-            lines.append("  ✓ None")
-        else:
-            # General formatting for other sections
-            for item in data[:5]:
-                lines.append(f"  • {str(item)}")
 
     def __str__(self) -> str:
         return self.summary()
