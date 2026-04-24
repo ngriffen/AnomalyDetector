@@ -7,6 +7,8 @@ from __future__ import annotations
 import pandas as pd
 
 from .checks.rare_values import check_rare_values
+from .checks.null_values import check_null_values
+from .checks.duplicate_rows import check_duplicate_rows
 from .report import AnomalyReport
 
 
@@ -25,6 +27,10 @@ class AnomalyDetector:
         Only inspect columns whose total number of unique values is at
         most this number.  Very-high-cardinality columns (e.g. free-text
         IDs) would produce noise rather than signal.  Default is 50.
+    null_threshold_pct : float
+        Columns with a null rate >= this percentage are flagged. Default 5.0.
+    duplicate_subset : list[str] | None
+        Columns to consider for duplicate-row detection. None = all columns.
     """
 
     def __init__(
@@ -32,6 +38,8 @@ class AnomalyDetector:
         df: pd.DataFrame,
         rare_threshold: int = 5,
         rare_max_categories: int = 50,
+        null_threshold_pct: float = 5.0,
+        duplicate_subset: list | None = None,
     ) -> None:
         if not isinstance(df, pd.DataFrame):
             raise TypeError("df must be a pandas DataFrame.")
@@ -41,6 +49,8 @@ class AnomalyDetector:
         self.df = df.copy()
         self.rare_threshold = rare_threshold
         self.rare_max_categories = rare_max_categories
+        self.null_threshold_pct = null_threshold_pct
+        self.duplicate_subset = duplicate_subset
 
     # ------------------------------------------------------------------
     # Public API
@@ -62,5 +72,14 @@ class AnomalyDetector:
             max_categories=self.rare_max_categories,
         )
 
-        return AnomalyReport(findings=findings, df_shape=self.df.shape)
+        findings["null_values"] = check_null_values(
+            self.df,
+            threshold_pct=self.null_threshold_pct,
+        )
 
+        findings["duplicate_rows"] = check_duplicate_rows(
+            self.df,
+            subset=self.duplicate_subset,
+        )
+
+        return AnomalyReport(findings=findings, df_shape=self.df.shape)
