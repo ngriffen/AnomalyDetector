@@ -107,24 +107,24 @@ class AnomalyReport:
         lines.append(f"\n{HEADER}--- EXECUTIVE SUMMARY ---{END}")
         
         # 1. Rare
-        lines.append(f"  [1] Rare Values:  {'✓ Pass' if not rv else f'! {len(rv)}'}")
+        lines.append(f"  [1] Rare Values:  {'✓ Pass' if not rv else f'! {len(rv)} | Anomalies'}")
         
         # 2. Nulls
-        lines.append(f"  [2] Null Values:  {'✓ Pass' if not nv else f'! {len(nv)}'}")
+        lines.append(f"  [2] Null Values:  {'✓ Pass' if not nv else f'! {len(nv)} | Nulls'}")
         
         # 3. Duplicates
-        lines.append(f"  [3] Duplicates:   {'✓ Pass' if not dv else f'! {len(dv)} groups'}")
+        lines.append(f"  [3] Duplicates:   {'✓ Pass' if not dv else f'! {len(dv)} | Groups'}")
         
         # 4. Outliers (Summing the total outlier count)
         outlier_total = sum(item['count'] for item in so) if so else 0
-        lines.append(f"  [4] Outliers:     {'✓ Pass' if not so else f'! {outlier_total}'}")
+        lines.append(f"  [4] Outliers:     {'✓ Pass' if not so else f'! {outlier_total} | Outliers'}")
         
         # 5. Types
-        lines.append(f"  [5] Mixed Types:  {'✓ Pass' if not ti else f'! {len(ti)} columns'}")
+        lines.append(f"  [5] Mixed Types:  {'✓ Pass' if not ti else f'! {len(ti)} | Columns'}")
         
         # 6. Logical (Summing the total logical violations)
         logic_total = sum(item['count'] for item in lo) if lo else 0
-        lines.append(f"  [6] Logic Rules:  {'✓ Pass' if not lo else f'! {logic_total} rule violations'}")
+        lines.append(f"  [6] Logic Rules:  {'✓ Pass' if not lo else f'! {logic_total} | Rule Violations'}")
 
         lines.append(f"\n{HEADER}{'='*70}{END}")
         return "\n".join(lines)
