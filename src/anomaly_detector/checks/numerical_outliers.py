@@ -14,10 +14,14 @@ def check_numerical_outliers(df: pd.DataFrame) -> list[dict]:
         
         outliers = series[(series < lower) | (series > upper)]
         if not outliers.empty:
+            # Capture the exact index and value for the report
+            sample_indices = outliers.index.tolist()[:5]
+            sample_values = outliers.tolist()[:5]
+            
             findings.append({
                 "column": col,
                 "count": len(outliers),
                 "bounds": (round(lower, 2), round(upper, 2)),
-                "samples": outliers.unique().tolist()[:3]
+                "details": [{"row": idx, "val": val} for idx, val in zip(sample_indices, sample_values)]
             })
     return findings
