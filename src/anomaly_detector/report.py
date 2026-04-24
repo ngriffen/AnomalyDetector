@@ -103,28 +103,35 @@ class AnomalyReport:
                 if item['count'] > 5:
                     lines.append(f"    ... and {item['count'] - 5} more.")
                     
-        # --- [7] Executive Summary ---
+# --- [7] Executive Summary ---
         lines.append(f"\n{HEADER}--- EXECUTIVE SUMMARY ---{END}")
         
+        # We use :<3 to ensure numbers up to 999 take up the same horizontal space
         # 1. Rare
-        lines.append(f"  [1] Rare Values:  {'✓ Pass' if not rv else f'! {len(rv)} | Anomalies'}")
+        rare_status = "✓ Pass" if not rv else f"! {len(rv):<3} | Anomalies"
+        lines.append(f"  [1] Rare Values:  {rare_status}")
         
         # 2. Nulls
-        lines.append(f"  [2] Null Values:  {'✓ Pass' if not nv else f'! {len(nv)} | Nulls'}")
+        null_status = "✓ Pass" if not nv else f"! {len(nv):<3} | Null Columns"
+        lines.append(f"  [2] Null Values:  {null_status}")
         
         # 3. Duplicates
-        lines.append(f"  [3] Duplicates:   {'✓ Pass' if not dv else f'! {len(dv)} | Groups'}")
+        dupe_status = "✓ Pass" if not dv else f"! {len(dv):<3} | Duplicated Groups"
+        lines.append(f"  [3] Duplicates:   {dupe_status}")
         
-        # 4. Outliers (Summing the total outlier count)
+        # 4. Outliers
         outlier_total = sum(item['count'] for item in so) if so else 0
-        lines.append(f"  [4] Outliers:     {'✓ Pass' if not so else f'! {outlier_total} | Outliers'}")
+        out_status = "✓ Pass" if not so else f"! {outlier_total:<3} | Statistical Outliers"
+        lines.append(f"  [4] Outliers:     {out_status}")
         
         # 5. Types
-        lines.append(f"  [5] Mixed Types:  {'✓ Pass' if not ti else f'! {len(ti)} | Columns'}")
+        type_status = "✓ Pass" if not ti else f"! {len(ti):<3} | Mixed Type Columns"
+        lines.append(f"  [5] Mixed Types:  {type_status}")
         
-        # 6. Logical (Summing the total logical violations)
+        # 6. Logical
         logic_total = sum(item['count'] for item in lo) if lo else 0
-        lines.append(f"  [6] Logic Rules:  {'✓ Pass' if not lo else f'! {logic_total} | Rule Violations'}")
+        log_status = "✓ Pass" if not lo else f"! {logic_total:<3} | Rule Violations"
+        lines.append(f"  [6] Logic Rules:  {log_status}")
 
         lines.append(f"\n{HEADER}{'='*70}{END}")
         return "\n".join(lines)
