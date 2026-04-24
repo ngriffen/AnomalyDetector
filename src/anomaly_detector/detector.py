@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+# These relative imports link to the files in the checks folder
 from .checks.rare_values import check_rare_values
 from .checks.null_values import check_null_values
 from .checks.duplicate_rows import check_duplicate_rows
@@ -15,19 +16,6 @@ from .report import AnomalyReport
 class AnomalyDetector:
     """
     Run a suite of anomaly checks against a pandas DataFrame.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        The dataset to analyse.
-    rare_threshold : int
-        Values that appear fewer than or equal to this many times are flagged. Default is 5.
-    rare_max_categories : int
-        Skip columns with > this many unique values. Default is 50.
-    null_threshold_pct : float
-        Flag columns with a null percentage >= this value. Default is 5.0.
-    duplicate_subset : list[str] | None
-        Specific columns to check for duplicates. None checks all columns.
     """
 
     def __init__(
@@ -36,7 +24,7 @@ class AnomalyDetector:
         rare_threshold: int = 5,
         rare_max_categories: int = 50,
         null_threshold_pct: float = 5.0,
-        duplicate_subset: list | None = None,
+        duplicate_subset: list[str] | None = None,
     ) -> None:
         if not isinstance(df, pd.DataFrame):
             raise TypeError("df must be a pandas DataFrame.")
@@ -49,14 +37,8 @@ class AnomalyDetector:
         self.null_threshold_pct = null_threshold_pct
         self.duplicate_subset = duplicate_subset
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
     def run(self) -> AnomalyReport:
-        """
-        Execute all enabled checks and return a consolidated report.
-        """
+        """Execute all enabled checks and return a consolidated report."""
         findings: dict[str, list[dict]] = {}
 
         # 1. Rare Values
