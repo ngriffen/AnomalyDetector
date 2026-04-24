@@ -104,7 +104,7 @@ class AnomalyReport:
                     lines.append(f"    ... and {item['count'] - 5} more.")
                     
 # --- [7] Executive Summary ---
-        lines.append(f"\n{HEADER}--- EXECUTIVE SUMMARY ---{END}")
+        lines.append(f"\n{HEADER}--- ANOMALOUS SUMMARY ---{END}")
         
         # We use :<3 to ensure numbers up to 999 take up the same horizontal space
         # 1. Rare
@@ -126,12 +126,12 @@ class AnomalyReport:
         
         # 5. Types
         type_status = "✓ Pass" if not ti else f"! {len(ti):<3} |"
-        lines.append(f"  [5] Mixed Types:  {type_status}")
+        lines.append(f"  [5] Type Crimes:  {type_status}")
         
         # 6. Logical
         logic_total = sum(item['count'] for item in lo) if lo else 0
         log_status = "✓ Pass" if not lo else f"! {logic_total:<3} |"
-        lines.append(f"  [6] Logic Rules:  {log_status}")
+        lines.append(f"  [6] Logic Crimes:  {log_status}")
 
         lines.append(f"\n{HEADER}{'='*70}{END}")
         return "\n".join(lines)
