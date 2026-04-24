@@ -1,116 +1,70 @@
-"""
-AnomalyReport — holds all findings from a detector run and provides
-pretty-printing and export helpers.
-"""
-
 from __future__ import annotations
-
 from typing import Any
 import pandas as pd
 
-
 class AnomalyReport:
-    """Container for anomaly-detection findings."""
-
-    def __init__(
-        self,
-        findings: dict[str, list[dict]],
-        df_shape: tuple[int, int],
-    ) -> None:
+    def __init__(self, findings: dict[str, list[dict]], df_shape: tuple[int, int]) -> None:
         self.findings = findings
         self.df_shape = df_shape
 
-    @property
-    def rare_values(self) -> list[dict]:
-        return self.findings.get("rare_values", [])
-
-    @property
-    def null_values(self) -> list[dict]:
-        return self.findings.get("null_values", [])
-
-    @property
-    def duplicate_rows(self) -> list[dict]:
-        return self.findings.get("duplicate_rows", [])
-
-    def rare_values_df(self) -> pd.DataFrame:
-        """Return rare-value findings as a tidy DataFrame."""
-        data = self.rare_values
-        if not data:
-            return pd.DataFrame(
-                columns=["column", "value", "count", "pct", "total_rows", "unique_vals"]
-            )
-        return pd.DataFrame(data)
-
     def summary(self) -> str:
-        """Return a human-readable text summary of all findings."""
-        rows, cols = self.df_shape
-        
-        # Color codes for a clean terminal/Colab output
-        HEADER = '\033[95m'
-        OKBLUE = '\033[94m'
-        WARNING = '\033[93m'
-        ENDC = '\033[0m'
+        # Colors for the terminal/Colab
+        HEADER, BLUE, YEL, END = '\033[95m', '\033[94m', '\033[93m', '\033[0m'
         BOLD = '\033[1m'
 
-        lines: list[str] = [
-            f"{HEADER}{'=' * 60}{ENDC}",
-            f"  {BOLD}Anomaly Report{ENDC}",
-            f"{HEADER}{'=' * 60}{ENDC}",
-            f"  Dataset : {rows:,} rows × {cols:,} columns",
-            "",
+        lines = [
+            f"{HEADER}{'='*60}{END}",
+            f"  {BOLD}DATA QUALITY AUDIT{END}",
+            f"{HEADER}{'='*60}{END}",
+            f"  Dataset: {self.df_shape[0]} rows x {self.df_shape[1]} columns",
+            ""
         ]
 
-        # ---- Section 1: Anomalies Detected (Rare Values) ----
-        rv = self.rare_values
-        lines.append(f"{OKBLUE}[1] Anomalies Detected  ({len(rv)} flag(s)){ENDC}")
+        # --- [1] Anomalies Detected (Rare Values) ---
+        rv = self.findings.get("rare_values", [])
+        lines.append(f"{BLUE}1] Anomalies Detected{END} ({len(rv)} flags)")
         lines.append("-" * 60)
         if not rv:
-            lines.append("    ✓ No rare values detected.")
+            lines.append("  ✓ No rare values detected.")
         else:
-            by_col: dict[str, list[dict]] = {}
             for item in rv:
-                by_col.setdefault(item["column"], []).append(item)
+                lines.append(f"  • Col: '{item['column']}' | Value: {item['value']!r} (Count: {item['count']})")
 
-            for col, items in by_col.items():
-                lines.append(f"  Column : '{col}'  ({items[0]['unique_vals']} unique vals)")
-                for item in items:
-                    lines.append(
-                        f"    • {_fmt_value(item['value'])!r:<20} "
-                        f"count={item['count']:>4}  "
-                        f"({item['pct']:.2f}%)"
-                    )
-                lines.append("")
-
-        # ---- Section 2: Null Values Detected ----
-        nv = self.null_values
-        lines.append(f"{OKBLUE}[2] Null Values Detected  ({len(nv)} flag(s)){ENDC}")
+        # --- [2] Null Values Detected ---
+        nv = self.findings.get("null_values", [])
+        lines.append(f"\n{BLUE}2] Null Values Detected{END} ({len(nv)} flags)")
         lines.append("-" * 60)
         if not nv:
-            lines.append("    ✓ No high null-rate columns detected.")
+            lines.append("  ✓ No high-null columns detected.")
         else:
             for item in nv:
-                lines.append(f"  Column : '{item['column']}' -> {WARNING}{item['null_pct']:.2f}% missing{ENDC}")
-            lines.append("")
+                lines.append(f"  • Col: '{item['column']}' | {YEL}{item['null_pct']}% missing{END}")
 
-        # ---- Section 3: Duplicates Detected ----
-        dupes = self.duplicate_rows
-        dupe_count = dupes[0]['count'] if dupes else 0
-        lines.append(f"{OKBLUE}[3] Duplicates Detected{ENDC}")
+        # --- [3] Duplicates Detected ---
+        dv = self.findings.get("duplicate_rows", [])
+        lines.append(f"\n{BLUE}3] Duplicates Detected{END}")
         lines.append("-" * 60)
-        if dupe_count == 0:
-            lines.append("    ✓ No duplicate rows detected.")
+        if not dv:
+            lines.append("  ✓ No duplicate rows detected.")
         else:
-            lines.append(f"  {WARNING}Found {dupe_count:,} duplicate rows.{ENDC}")
-            if dupes[0].get('subset') != "all_columns":
-                lines.append(f"  (Subset checked: {dupes[0]['subset']})")
-        
-        lines.append("")
-        lines.append(f"{HEADER}{'=' * 60}{ENDC}")
+            total = dv[0]['total_count']
+            lines.append(f"  {YEL}Found {total} duplicate rows:{END}")
+            
+            # Show the first 10 duplicates so the report doesn't get too long
+            for item in dv[:10]:
+                idx = item['row_index']
+                # Create a clean string of the attributes
+                attr_str = ", ".join([f"{k}: {v}" for k, v in item['attributes'].items()])
+                # Truncate if very long
+                if len(attr_str) > 70: attr_str = attr_str[:67] + "..."
+                
+                lines.append(f"  • Row {idx:>4}: {attr_str}")
+            
+            if total > 10:
+                lines.append(f"  ... and {total - 10} more duplicate rows.")
+
+        lines.append(f"\n{HEADER}{'='*60}{END}")
         return "\n".join(lines)
 
     def __str__(self) -> str:
         return self.summary()
-
-def _fmt_value(val: Any) -> str:
-    s = str(val)
-    return s if len(s) <= 30 else s[:27] + "..."
