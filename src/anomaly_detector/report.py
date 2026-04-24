@@ -108,29 +108,29 @@ class AnomalyReport:
         
         # We use :<3 to ensure numbers up to 999 take up the same horizontal space
         # 1. Rare
-        rare_status = "✓ Pass" if not rv else f"! {len(rv):<3} | Anomalies"
+        rare_status = "✓ Pass" if not rv else f"! {len(rv):<3} |"
         lines.append(f"  [1] Rare Values:  {rare_status}")
         
         # 2. Nulls
-        null_status = "✓ Pass" if not nv else f"! {len(nv):<3} | Null Columns"
+        null_status = "✓ Pass" if not nv else f"! {len(nv):<3} |"
         lines.append(f"  [2] Null Values:  {null_status}")
         
         # 3. Duplicates
-        dupe_status = "✓ Pass" if not dv else f"! {len(dv):<3} | Duplicated Groups"
+        dupe_status = "✓ Pass" if not dv else f"! {len(dv):<3} |"
         lines.append(f"  [3] Duplicates:   {dupe_status}")
         
         # 4. Outliers
         outlier_total = sum(item['count'] for item in so) if so else 0
-        out_status = "✓ Pass" if not so else f"! {outlier_total:<3} | Statistical Outliers"
+        out_status = "✓ Pass" if not so else f"! {outlier_total:<3} |"
         lines.append(f"  [4] Outliers:     {out_status}")
         
         # 5. Types
-        type_status = "✓ Pass" if not ti else f"! {len(ti):<3} | Mixed Type Columns"
+        type_status = "✓ Pass" if not ti else f"! {len(ti):<3} |"
         lines.append(f"  [5] Mixed Types:  {type_status}")
         
         # 6. Logical
         logic_total = sum(item['count'] for item in lo) if lo else 0
-        log_status = "✓ Pass" if not lo else f"! {logic_total:<3} | Rule Violations"
+        log_status = "✓ Pass" if not lo else f"! {logic_total:<3} |"
         lines.append(f"  [6] Logic Rules:  {log_status}")
 
         lines.append(f"\n{HEADER}{'='*70}{END}")
