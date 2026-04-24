@@ -131,7 +131,7 @@ class AnomalyReport:
         # 6. Logical
         logic_total = sum(item['count'] for item in lo) if lo else 0
         log_status = "✓ Pass" if not lo else f"! {logic_total:<3} |"
-        lines.append(f"  [6] Logic Crimes:  {log_status}")
+        lines.append(f"  [6] Logic Crimes: {log_status}")
 
         lines.append(f"\n{HEADER}{'='*70}{END}")
         return "\n".join(lines)
