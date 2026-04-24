@@ -2,16 +2,24 @@ import pandas as pd
 
 def check_duplicate_rows(df: pd.DataFrame, subset: list[str] | None = None) -> list[dict]:
     """
-    Flags if there are any duplicate rows in the DataFrame.
+    Flags duplicate rows and captures their index and attributes.
     """
-    # Find all duplicates except the first occurrence
-    duplicates = df.duplicated(subset=subset, keep='first')
-    count = duplicates.sum()
-
-    if count > 0:
-        return [{
-            "issue_type": "duplicate_rows",
-            "count": int(count),
-            "subset": subset or "all_columns"
-        }]
-    return []
+    # keep='first' marks the 2nd, 3rd, etc. occurrences as True
+    is_duplicate = df.duplicated(subset=subset, keep='first')
+    duplicate_indices = df.index[is_duplicate].tolist()
+    
+    findings = []
+    if duplicate_indices:
+        for idx in duplicate_indices:
+            # Capture the values of the row to show the "attributes"
+            # We convert to dict for easy reporting
+            row_values = df.loc[idx].to_dict()
+            
+            findings.append({
+                "row_index": idx,
+                "attributes": row_values,
+                "subset": subset or "all_columns",
+                "total_count": len(duplicate_indices)
+            })
+            
+    return findings
