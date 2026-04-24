@@ -102,6 +102,29 @@ class AnomalyReport:
                     lines.append(f"    - Row {detail['row']:>4}: {detail['val']!r}")
                 if item['count'] > 5:
                     lines.append(f"    ... and {item['count'] - 5} more.")
+                    
+        # --- [7] Executive Summary ---
+        lines.append(f"\n{HEADER}--- EXECUTIVE SUMMARY ---{END}")
+        
+        # 1. Rare
+        lines.append(f"  [1] Rare Values:  {'✓ Pass' if not rv else f'! {len(rv)} anomalies found'}")
+        
+        # 2. Nulls
+        lines.append(f"  [2] Null Values:  {'✓ Pass' if not nv else f'! {len(nv)} columns flagged'}")
+        
+        # 3. Duplicates
+        lines.append(f"  [3] Duplicates:   {'✓ Pass' if not dv else f'! {len(dv)} duplicated groups found'}")
+        
+        # 4. Outliers (Summing the total outlier count)
+        outlier_total = sum(item['count'] for item in so) if so else 0
+        lines.append(f"  [4] Outliers:     {'✓ Pass' if not so else f'! {outlier_total} statistical outliers found'}")
+        
+        # 5. Types
+        lines.append(f"  [5] Mixed Types:  {'✓ Pass' if not ti else f'! {len(ti)} columns flagged'}")
+        
+        # 6. Logical (Summing the total logical violations)
+        logic_total = sum(item['count'] for item in lo) if lo else 0
+        lines.append(f"  [6] Logic Rules:  {'✓ Pass' if not lo else f'! {logic_total} rule violations found'}")
 
         lines.append(f"\n{HEADER}{'='*70}{END}")
         return "\n".join(lines)
