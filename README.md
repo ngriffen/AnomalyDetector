@@ -16,7 +16,7 @@
 - **Statistical Outlier Detection**: Uses the Interquartile Range (IQR) method to mathematically identify "extreme" numerical values that could skew results.
 - **Type Inconsistency Checking**: Flags "dirty" columns containing mixed Python types (e.g., strings inside numeric columns) that often cause pipeline crashes.
 - **Scalable Logical Validation**: Executes custom, rule-based audits—such as range limits, regex patterns, and allowed-value lists—tailored to your specific business logic.
-- **Consolidated Reporting**: Returns a clean `DATA QUALITY AUDIT REPORT` object containing all detected findings.
+- **Consolidated Reporting**: Returns a clean `ANOMALY REPORT` object containing all detected findings.
 
 
 ---
