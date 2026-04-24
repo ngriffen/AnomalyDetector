@@ -8,7 +8,7 @@
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Rare Value Detection**: Surfaces potential typos or uncommon categories by identifying values that fall below a specific frequency threshold.
 - **Null Rate Analysis**: Automatically flags columns where missing data exceeds a user-defined percentage, highlighting gaps in data collection.
@@ -21,7 +21,7 @@
 
 ---
 
-## 📦 Installation
+## Installation
 
 To install the package in development mode, clone the repository and run:
 
