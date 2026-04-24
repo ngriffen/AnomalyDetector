@@ -1,9 +1,6 @@
 import pandas as pd
 
 def check_null_values(df: pd.DataFrame, threshold_pct: float = 5.0) -> list[dict]:
-    """
-    Flags columns where the percentage of missing values is >= threshold_pct.
-    """
     findings = []
     null_counts = df.isnull().sum()
     null_pcts = (null_counts / len(df)) * 100
