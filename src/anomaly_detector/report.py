@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Any
 import pandas as pd
 
 class AnomalyReport:
@@ -9,7 +8,6 @@ class AnomalyReport:
         self.mode = mode
 
     def summary(self) -> str:
-        # Formatting Codes
         HEADER, BLUE, YEL, RED, END = '\033[95m', '\033[94m', '\033[93m', '\033[91m', '\033[0m'
         BOLD = '\033[1m'
 
@@ -21,7 +19,7 @@ class AnomalyReport:
             ""
         ]
 
-        # --- [AUTO] Unsupervised Section ---
+        # --- [AUTO] Section ---
         if self.mode in ['auto', 'full']:
             am = self.findings.get('auto_multivariate', [])
             lines.append(f"{BLUE}[AUTO] Unsupervised Multivariate Anomalies{END}")
@@ -38,96 +36,63 @@ class AnomalyReport:
                         if len(row_str) > 70: row_str = row_str[:67] + "..."
                         lines.append(f"    - Row {detail['row']:>4}: {row_str}")
 
-        # --- BASIC Detailed Sections ---
+        # --- BASIC Sections (1-6) ---
         if self.mode in ['basic', 'full']:
-            # [1] Rare Values
+            # 1. Rare
             rv = self.findings.get('rare_values', [])
             lines.append(f"\n{BLUE}1] Anomalies Detected (Rare Values){END}")
             lines.append("-" * 80)
-            if not rv:
-                lines.append("  ✓ No rare values detected.")
+            if not rv: lines.append("  ✓ No rare values detected.")
             else:
-                by_col = {}
                 for item in rv:
-                    by_col.setdefault(item['column'], []).append(item)
-                for col, items in by_col.items():
-                    lines.append(f"  • Col: '{col}'")
-                    for item in items:
-                        lines.append(f"    - {str(item['value']):<15} | Count: {item['count']:<4} | {item['pct']:.2f}%")
+                    lines.append(f"    - Col: '{item['column']}' | Value: {str(item['value']):<10} | Count: {item['count']} ({item['pct']:.2f}%)")
 
-            # [2] Null Values
+            # 2. Nulls
             nv = self.findings.get('null_values', [])
             lines.append(f"\n{BLUE}2] Null Values Detected{END}")
             lines.append("-" * 80)
-            if not nv:
-                lines.append("  ✓ No high null-rate columns detected.")
+            if not nv: lines.append("  ✓ No high null-rate columns.")
             else:
                 for item in nv:
-                    lines.append(f"  • '{item['column']}': {YEL}{item['null_pct']:.1f}% missing{END} ({item['null_count']} rows)")
+                    lines.append(f"  • '{item['column']}': {YEL}{item['null_pct']:.1f}% missing{END}")
 
-            # [3] Duplicates
+            # 3. Duplicates
             dv = self.findings.get('duplicate_rows', [])
             lines.append(f"\n{BLUE}3] Duplicates Detected{END}")
             lines.append("-" * 80)
-            if not dv:
-                lines.append("  ✓ No duplicate rows detected.")
+            if not dv: lines.append("  ✓ No duplicate rows.")
             else:
-                lines.append(f"  {YEL}Found {len(dv)} distinct duplicated records:{END}")
-                for i, item in enumerate(dv[:5], 1):
-                    attr_str = ", ".join([f"{k}: {v}" for k, v in item['attributes'].items()])
-                    if len(attr_str) > 70: attr_str = attr_str[:67] + "..."
-                    lines.append(f"  {i}. {attr_str}")
-                    lines.append(f"     ↳ {item['occurrences']} occurrences at rows: {item['row_indices']}")
+                lines.append(f"  {YEL}Found {len(dv)} duplicated groups.{END}")
 
-            # [4] Statistical Outliers
+            # 4. Outliers
             so = self.findings.get('numerical_outliers', [])
             lines.append(f"\n{BLUE}4] Statistical Outliers (IQR Method){END}")
             lines.append("-" * 80)
-            if not so:
-                lines.append("  ✓ No statistical outliers detected.")
+            if not so: lines.append("  ✓ No statistical outliers.")
             else:
                 for item in so:
                     lines.append(f"  • '{item['column']}' ({item['count']} outliers)")
-                    lines.append(f"    - Expected Range: {item['bounds'][0]:,} to {item['bounds'][1]:,}")
-                    outlier_strs = [f"{d['val']:,} (Row {d['row']})" for d in item['details'][:5]]
-                    lines.append(f"    - Sample: {', '.join(outlier_strs)}")
 
-            # [5] Type Inconsistency
+            # 5. Type Inconsistency
             ti = self.findings.get('type_inconsistency', [])
             lines.append(f"\n{BLUE}5] Type Inconsistency{END}")
             lines.append("-" * 80)
-            if not ti:
-                lines.append("  ✓ All columns have consistent data types.")
+            if not ti: lines.append("  ✓ All types consistent.")
             else:
                 for item in ti:
-                    lines.append(f"  • Col: '{item['column']}' | Mixed types: {YEL}{item['types_found']}{END}")
+                    lines.append(f"  • '{item['column']}' | Types: {YEL}{item['types_found']}{END}")
 
-            # [6] Logical Outliers
+            # 6. Logical Outliers
             lo = self.findings.get('logical_outliers', [])
             lines.append(f"\n{BLUE}6] Logical Outliers (Rule Violations){END}")
             lines.append("-" * 80)
-            if not lo:
-                lines.append("  ✓ No logical rule violations detected.")
+            if not lo: lines.append("  ✓ No rule violations.")
             else:
                 for item in lo:
-                    lines.append(f"  • Col: '{item['column']}' | {RED}{item['issue']}{END} ({item['count']} total)")
-                    for detail in item['details'][:5]:
-                        lines.append(f"    - Row {detail['row']:>4}: {detail['val']!r}")
-
-            # [7] Pattern Violations
-            pv = self.findings.get('pattern_violations', [])
-            lines.append(f"\n{BLUE}7] Pattern Violations (Regex){END}")
-            lines.append("-" * 80)
-            if not pv:
-                lines.append("  ✓ All patterns matched.")
-            else:
-                for item in pv:
-                    lines.append(f"  • '{item['column']}' | {RED}{item['issue']}{END} ({item['count']} errors)")
-                    for detail in item['details'][:5]:
-                        lines.append(f"    - Row {detail['row']:>4}: {detail['val']!r}")
+                    lines.append(f"  • '{item['column']}' | {RED}{item['issue']}{END} ({item['count']} total)")
 
         # --- ANOMALY SUMMARY ---
-        lines.append(f"\n{HEADER}--- ANOMALY REPORT ---{END}")
+        lines.append(f"\n{HEADER}--- ANOMALY SUMMARY ---{END}")
         f = self.findings
 
         if self.mode in ['basic', 'full']:
@@ -141,9 +106,6 @@ class AnomalyReport:
             
             log_cnt = sum(item['count'] for item in f.get('logical_outliers', []))
             lines.append(f"  [6] Logic Rules:    {'✓ Pass' if not f.get('logical_outliers') else f'! {log_cnt:<3} | Rule Violations'}")
-            
-            pat_cnt = sum(item['count'] for item in f.get('pattern_violations', []))
-            lines.append(f"  [7] Regex Patterns: {'✓ Pass' if not f.get('pattern_violations') else f'! {pat_cnt:<3} | Pattern Mismatches'}")
 
         if self.mode in ['auto', 'full']:
             am_data = f.get('auto_multivariate', [])
