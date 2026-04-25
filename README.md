@@ -38,6 +38,20 @@ The Auto Mode moves beyond simple row-by-row rules to analyze the "hidden" relat
 
 ---
 
+### Anomaly Summary
+
+| #     | Check        | Result |
+|-------|--------------|--------|
+| [1]   | Rare Values  | 3      |
+| [2]   | Null Values  | ✓ Pass |
+| [3]   | Duplicates   | 2      |
+| [4]   | Outliers     | 12     |
+| [5]   | Mixed Types  | 1      |
+| [6]   | Logic Rules  | ✓ Pass |
+| [AUTO]| Machine ML   | 6      |
+
+---
+
 ## Installation
 
 To install the package in development mode, clone the repository and run:
