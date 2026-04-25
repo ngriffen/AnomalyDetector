@@ -41,17 +41,33 @@ class AnomalyReport:
             # ... (Insert your existing detailed print logic for sections 1 through 7 here) ...
             lines.append(f"\n  {BLUE}(Basic Detailed Output Handled Here){END}")
 
-        # --- EXECUTIVE SUMMARY ---
-        lines.append(f"\n{HEADER}--- EXECUTIVE SUMMARY ---{END}")
+       # --- EXECUTIVE SUMMARY ---
+        lines.append(f"\n{HEADER}--- ANOMALY SUMMARY ---{END}")
         
+        f = self.findings # Short alias to keep lines readable
+
         if self.mode in ['basic', 'full']:
-            lines.append(f"  [1] Rare Values:    {'✓ Pass' if not self.findings.get('rare_values') else f'! {len(self.findings.get(\"rare_values\")):<3} | Anomalies'}")
-            # ... (Add the rest of your 6 basic summary lines here) ...
+            # Use ' (single quotes) inside the { } to avoid SyntaxErrors
+            lines.append(f"  [1] Rare Values:    {'✓ Pass' if not f.get('rare_values') else f'! {len(f.get(\"rare_values\", [])):<3} | Anomalies'}")
+            lines.append(f"  [2] Null Values:    {'✓ Pass' if not f.get('null_values') else f'! {len(f.get(\"null_values\", [])):<3} | Null Columns'}")
+            lines.append(f"  [3] Duplicates:     {'✓ Pass' if not f.get('duplicate_rows') else f'! {len(f.get(\"duplicate_rows\", [])):<3} | Duplicated Groups'}")
+            
+            outlier_total = sum(item['count'] for item in f.get('numerical_outliers', []))
+            lines.append(f"  [4] Outliers:       {'✓ Pass' if not f.get('numerical_outliers') else f'! {outlier_total:<3} | Statistical Outliers'}")
+            
+            lines.append(f"  [5] Mixed Types:    {'✓ Pass' if not f.get('type_inconsistency') else f'! {len(f.get(\"type_inconsistency\", [])):<3} | Mixed Type Columns'}")
+            
+            logic_total = sum(item['count'] for item in f.get('logical_outliers', []))
+            lines.append(f"  [6] Logic Rules:    {'✓ Pass' if not f.get('logical_outliers') else f'! {logic_total:<3} | Rule Violations'}")
+            
+            pattern_total = sum(item['count'] for item in f.get('pattern_violations', []))
+            lines.append(f"  [7] Regex Patterns: {'✓ Pass' if not f.get('pattern_violations') else f'! {pattern_total:<3} | Pattern Mismatches'}")
 
         if self.mode in ['auto', 'full']:
-            am = self.findings.get("auto_multivariate", [])
-            lines.append(f"  [AUTO] Machine ML:  {'✓ Pass' if not am else f'! {am[0][\"count\"] if \"count\" in am[0] else \"ERR\":<3} | Multivariate Anomalies'}")
-
+            am = f.get('auto_multivariate', [])
+            auto_count = am[0]['count'] if am and 'count' in am[0] else 0
+            lines.append(f"  [AUTO] Machine ML:  {'✓ Pass' if not am else f'! {auto_count:<3} | Multivariate Anomalies'}")
+                      
         lines.append(f"{HEADER}{'='*80}{END}")
         return "\n".join(lines)
 
