@@ -125,7 +125,7 @@ class AnomalyReport:
         if self.mode in ['auto', 'full']:
             am_data = f.get('auto_multivariate', [])
             auto_cnt = am_data[0]['count'] if am_data and 'count' in am_data[0] else 0
-            lines.append(f"  [AUTO] Machine ML:  {'✓ Pass' if not am_data else f'! {auto_cnt:<3} | Multivariate Anomalies'}")
+            lines.append(f"  [AUTO] Machine ML:  {'✓ Pass' if not am_data else f' {auto_cnt:<3} | Multivariate Anomalies'}")
 
         lines.append(f"{HEADER}{'='*80}{END}")
         return "\n".join(lines)
