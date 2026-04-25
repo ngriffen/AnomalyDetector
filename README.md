@@ -17,7 +17,7 @@
 - **Type Inconsistency Checking**: Flags "dirty" columns containing mixed Python types (e.g., strings inside numeric columns) that often cause pipeline crashes.
 - **Scalable Logical Validation**: Executes custom, rule-based audits—such as range limits, regex patterns, and allowed-value lists—tailored to your specific business logic.
 
-# Auto Mode (Machine Learning)
+## Auto Mode (Machine Learning)
 The Auto Mode moves beyond simple row-by-row rules to analyze the "hidden" relationships within your data using unsupervised machine learning.
 
 - **Unsupervised Multivariate Detection**: Powered by the Isolation Forest algorithm, this mode detects anomalies that traditional rules miss. It identifies outliers where individual values might look normal, but their combination is statistically rare.
