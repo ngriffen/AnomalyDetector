@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
-**AnomalyDetector** is a lightweight, modular Python suite designed to automate data auditing in pandas DataFrames. By shifting quality control to the earliest stage of the pipeline, it enables data scientists and analysts to catch statistical outliers, type inconsistencies, and logical rule violations before they corrupt downstream models or insights. Returns a clean `ANOMALY REPORT` object containing all detected findings.
+**AnomalyDetector** is a lightweight, modular Python suite designed to automate data auditing in pandas DataFrames. By shifting quality control to the earliest stage of the pipeline, it enables data scientists and analysts to catch statistical outliers, type inconsistencies, and logical rule violations before they corrupt downstream models or insights. Returns an `ANOMALY REPORT` object containing all detected findings.
 
 ---
 
