@@ -22,25 +22,25 @@ class AnomalyReport:
         # --- [AUTO] Section ---
         if self.mode in ['auto', 'full']:
             am = self.findings.get('auto_multivariate', [])
-            lines.append(f"{BLUE}[AUTO] Unsupervised Multivariate Anomalies{END}")
+            lines.append(f"\n{BLUE}[AUTO] Unsupervised Multivariate Anomalies{END}")
             lines.append("-" * 80)
             if not am:
                 lines.append("  ✓ No multivariate anomalies detected.")
-            elif 'error' in am[0]:
-                lines.append(f"  {RED}Error: {am[0]['error']}{END}")
             else:
                 for item in am:
                     lines.append(f"  {RED}! Detected {item['count']} rows with anomalous combinations.{END}")
                     for detail in item.get('details', []):
-                        # 1. Get the suspects
                         suspects = detail.get('suspects', [])
-                        suspect_str = f"{YEL}[Suspect Cols: {', '.join(suspects)}]{END}" if suspects else ""
+                        tag = detail.get('tag', 'Unknown')
                         
-                        # 2. Format the row data
+                        # Formatting the suspect string
+                        if tag == "Multivariate Mix":
+                            sus_label = f"{YEL}[Complex Interaction: {', '.join(suspects)}]{END}"
+                        else:
+                            sus_label = f"{RED}[Suspect: {', '.join(suspects)}]{END}"
+                        
                         row_str = ", ".join([f"{k}: {v}" for k, v in detail['val'].items()])
-                        
-                        # 3. Combine them
-                        lines.append(f"    - Row {detail['row']:>4}: {suspect_str}")
+                        lines.append(f"    - Row {detail['row']:>4}: {sus_label}")
                         lines.append(f"               Data: {row_str}")
 
         # --- BASIC Sections (1-6) ---
@@ -67,9 +67,17 @@ class AnomalyReport:
             dv = self.findings.get('duplicate_rows', [])
             lines.append(f"\n{BLUE}3] Duplicates Detected{END}")
             lines.append("-" * 80)
-            if not dv: lines.append("  ✓ No duplicate rows.")
+            if not dv:
+                lines.append("  ✓ No duplicate rows detected.")
             else:
-                lines.append(f"  {YEL}Found {len(dv)} duplicated groups.{END}")
+                lines.append(f"  {YEL}Found {len(dv)} groups of identical rows:{END}")
+                for item in dv:
+                    # item['attributes'] contains the actual data values that were duplicated
+                    attr_str = ", ".join([f"{k}: {v}" for k, v in item['attributes'].items()])
+                    if len(attr_str) > 70: attr_str = attr_str[:67] + "..."
+                    
+                    lines.append(f"  • Row Indices: {item['row_indices']}")
+                    lines.append(f"    Data: {attr_str}")
 
             # 4. Outliers
             so = self.findings.get('numerical_outliers', [])
