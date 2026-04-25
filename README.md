@@ -30,6 +30,8 @@ The Auto Mode moves beyond simple row-by-row rules to analyze the "hidden" relat
 
 ---
 
+## Mode Overview
+
 | Mode  | Command                      | Function |
 |-------|-----------------------------|----------|
 | Basic | `AnomalyDetector.Basic(df)` | Catching typos, nulls, duplicates, and explicit rule violations. |
