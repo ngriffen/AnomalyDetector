@@ -18,6 +18,23 @@
 - **Scalable Logical Validation**: Executes custom, rule-based audits—such as range limits, regex patterns, and allowed-value lists—tailored to your specific business logic.
 - **Consolidated Reporting**: Returns a clean `ANOMALY REPORT` object containing all detected findings.
 
+# Auto Mode (Machine Learning)
+The Auto Mode moves beyond simple row-by-row rules to analyze the "hidden" relationships within your data using unsupervised machine learning.
+
+- **Unsupervised Multivariate Detection**: Powered by the Isolation Forest algorithm, this mode detects anomalies that traditional rules miss. It identifies outliers where individual values might look normal, but their combination is statistically rare.
+
+- **Root Cause Attribution**: Unlike standard "black box" ML, the engine calculates feature importance via deviance scoring to pinpoint exactly which columns caused a row to be flagged.
+
+- **Complex Interaction Tagging**: The report distinguishes between Specific Suspects (single column outliers) and Complex Interactions (rows where the relationship between multiple features is the primary anomaly).
+
+- **Zero-Config Intelligence**: Requires no manual rules or thresholds. The engine automatically learns the "shape" of your unique dataset to separate signal from noise.
+
+---
+
+Mode,Command,Best For
+Basic,AnomalyDetector.Basic(df),"Catching typos, nulls, duplicates, and explicit rule violations."
+Auto,AnomalyDetector.Auto(df),"Finding ""weird"" data patterns using Unsupervised Machine Learning."
+Full,AnomalyDetector.Full(df),Total data assurance combining statistical rules and AI.
 
 ---
 
