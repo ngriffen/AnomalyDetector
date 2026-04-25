@@ -13,7 +13,7 @@ class AnomalyReport:
 
         lines = [
             f"{HEADER}{'='*80}{END}",
-            f"  {BOLD}DATA QUALITY AUDIT REPORT [{self.mode.upper()} MODE]{END}",
+            f"  {BOLD}ANOMALY REPORT [{self.mode.upper()} MODE]{END}",
             f"{HEADER}{'='*80}{END}",
             f"  Dataset: {self.df_shape[0]:,} rows × {self.df_shape[1]:,} columns",
             ""
