@@ -31,9 +31,11 @@ class AnomalyReport:
             else:
                 for item in am:
                     lines.append(f"  {RED}! Detected {item['count']} rows with highly anomalous feature combinations.{END}")
-                    for detail in item.get('details', [])[:3]:
+                    # REMOVED [:3] limit to show every row found
+                    for detail in item.get('details', []):
+                        # Format the row dictionary
                         row_str = ", ".join([f"{k}: {v}" for k, v in detail['val'].items()])
-                        if len(row_str) > 70: row_str = row_str[:67] + "..."
+                        # REMOVED character truncation to show the full result
                         lines.append(f"    - Row {detail['row']:>4}: {row_str}")
 
         # --- BASIC Sections (1-6) ---
