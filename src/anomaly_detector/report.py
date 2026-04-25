@@ -111,21 +111,22 @@ class AnomalyReport:
         f = self.findings
 
         if self.mode in ['basic', 'full']:
-            lines.append(f"  [1] Rare Values:    {'✓ Pass' if not f.get('rare_values') else f'! {len(f.get('rare_values', [])):<3} | Anomalies'}")
-            lines.append(f"  [2] Null Values:    {'✓ Pass' if not f.get('null_values') else f'! {len(f.get('null_values', [])):<3} | Null Columns'}")
-            lines.append(f"  [3] Duplicates:     {'✓ Pass' if not f.get('duplicate_rows') else f'! {len(f.get('duplicate_rows', [])):<3} | Duplicated Groups'}")
+            lines.append(f"  [1] Rare Values:    {'✓ Pass' if not f.get('rare_values') else f'{len(f.get('rare_values', [])):<3}'}")
+            lines.append(f"  [2] Null Values:    {'✓ Pass' if not f.get('null_values') else f'{len(f.get('null_values', [])):<3}'}")
+            lines.append(f"  [3] Duplicates:     {'✓ Pass' if not f.get('duplicate_rows') else f'{len(f.get('duplicate_rows', [])):<3}'}")
             
             out_cnt = sum(item['count'] for item in f.get('numerical_outliers', []))
-            lines.append(f"  [4] Outliers:       {'✓ Pass' if not f.get('numerical_outliers') else f'! {out_cnt:<3} | Statistical Outliers'}")
-            lines.append(f"  [5] Mixed Types:    {'✓ Pass' if not f.get('type_inconsistency') else f'! {len(f.get('type_inconsistency', [])):<3} | Mixed Type Columns'}")
+            lines.append(f"  [4] Outliers:       {'✓ Pass' if not f.get('numerical_outliers') else f'{out_cnt:<3}'}")
+            
+            lines.append(f"  [5] Mixed Types:    {'✓ Pass' if not f.get('type_inconsistency') else f'{len(f.get('type_inconsistency', [])):<3}'}")
             
             log_cnt = sum(item['count'] for item in f.get('logical_outliers', []))
-            lines.append(f"  [6] Logic Rules:    {'✓ Pass' if not f.get('logical_outliers') else f'! {log_cnt:<3} | Rule Violations'}")
+            lines.append(f"  [6] Logic Rules:    {'✓ Pass' if not f.get('logical_outliers') else f'{log_cnt:<3}'}")
 
         if self.mode in ['auto', 'full']:
             am_data = f.get('auto_multivariate', [])
             auto_cnt = am_data[0]['count'] if am_data and 'count' in am_data[0] else 0
-            lines.append(f"  [AUTO] Machine ML:  {'✓ Pass' if not am_data else f' {auto_cnt:<3} | Multivariate Anomalies'}")
+            lines.append(f"  [AUTO] Machine ML:  {'✓ Pass' if not am_data else f'{auto_cnt:<3}'}")
 
         lines.append(f"{HEADER}{'='*80}{END}")
         return "\n".join(lines)
