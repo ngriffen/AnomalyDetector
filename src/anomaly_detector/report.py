@@ -30,13 +30,18 @@ class AnomalyReport:
                 lines.append(f"  {RED}Error: {am[0]['error']}{END}")
             else:
                 for item in am:
-                    lines.append(f"  {RED}! Detected {item['count']} rows with highly anomalous feature combinations.{END}")
-                    # REMOVED [:3] limit to show every row found
+                    lines.append(f"  {RED}! Detected {item['count']} rows with anomalous combinations.{END}")
                     for detail in item.get('details', []):
-                        # Format the row dictionary
+                        # 1. Get the suspects
+                        suspects = detail.get('suspects', [])
+                        suspect_str = f"{YEL}[Suspect Cols: {', '.join(suspects)}]{END}" if suspects else ""
+                        
+                        # 2. Format the row data
                         row_str = ", ".join([f"{k}: {v}" for k, v in detail['val'].items()])
-                        # REMOVED character truncation to show the full result
-                        lines.append(f"    - Row {detail['row']:>4}: {row_str}")
+                        
+                        # 3. Combine them
+                        lines.append(f"    - Row {detail['row']:>4}: {suspect_str}")
+                        lines.append(f"               Data: {row_str}")
 
         # --- BASIC Sections (1-6) ---
         if self.mode in ['basic', 'full']:
