@@ -35,7 +35,7 @@ The Auto Mode moves beyond simple row-by-row rules to analyze the "hidden" relat
 |-------|-----------------------------|----------|
 | Basic | `AnomalyDetector.Basic(df)` | Catching typos, nulls, duplicates, and explicit rule violations. |
 | Auto  | `AnomalyDetector.Auto(df)`  | Finding "weird" data patterns using unsupervised machine learning. |
-| Full  | `AnomalyDetector.Full(df)`  | Basic + Auto. |
+| Full  | `AnomalyDetector.Full(df)`  | Both Basic and Auto for full anomaly detection capabilities. |
 
 ---
 
