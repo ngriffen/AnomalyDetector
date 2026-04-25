@@ -12,11 +12,11 @@ def check_auto_multivariate(df: pd.DataFrame, contamination: float = 0.01) -> li
 
     findings = []
     
-    # We only analyze numeric columns for the auto-detector to prevent string errors
+    # Analyze numeric columns only to avoid processing errors
     numeric_df = df.select_dtypes(include=['number']).dropna()
     
-    # Not enough data to confidently run ML
-    if len(numeric_df) < 50:
+    # Lowered threshold to 10 so it triggers more easily in testing/small datasets
+    if len(numeric_df) < 10:
         return findings
 
     # Train the Auto-Detector
@@ -29,14 +29,17 @@ def check_auto_multivariate(df: pd.DataFrame, contamination: float = 0.01) -> li
     if len(outliers_idx) > 0:
         violators = df.loc[outliers_idx]
         
-        sample_indices = violators.index.tolist()[:5]
-        # Store the full row dictionary for the report
-        sample_rows = violators.iloc[:5].to_dict(orient='records')
+        # REMOVED [:5] limit: Capture ALL indices and ALL row data
+        all_indices = violators.index.tolist()
+        all_rows = violators.to_dict(orient='records')
         
         findings.append({
-            "issue": "Multivariate Anomaly Detected",
+            "issue": "Multivariate Anomaly",
             "count": len(violators),
-            "details": [{"row": idx, "val": row_data} for idx, row_data in zip(sample_indices, sample_rows)]
+            "details": [
+                {"row": idx, "val": row_data} 
+                for idx, row_data in zip(all_indices, all_rows)
+            ]
         })
 
     return findings
