@@ -25,7 +25,7 @@ class AnomalyDetector:
     def suggest_config(df: pd.DataFrame) -> dict:
         """
         Analyzes the dataframe to suggest a starting configuration
-        based on current data distributions.
+        based on current statistical data distributions.
         """
         config = {
             "rare_threshold": max(2, int(len(df) * 0.01)), # 1% of data or min 2
@@ -35,20 +35,21 @@ class AnomalyDetector:
         }
         
         for col in df.columns:
-            # 1. Suggest ranges for numeric columns
+            # 1. Suggest ranges for numeric columns using Percentile Clipping (5th to 95th)
+            # This ensures the "Ideal" baseline ignores existing extreme outliers.
             if pd.api.types.is_numeric_dtype(df[col]):
-                # Using float() to ensure it serializes nicely if you export to JSON later
-                col_min = float(df[col].min())
-                col_max = float(df[col].max())
-                config["logical_rules"][col] = {"min": col_min, "max": col_max}
+                low, high = df[col].quantile([0.05, 0.95])
+                config["logical_rules"][col] = {"min": float(low), "max": float(high)}
                 
-            # 2. Suggest Regex patterns for small categorical lists
+            # 2. Suggest Regex patterns for categorical lists
             elif pd.api.types.is_object_dtype(df[col]):
-                unique_vals = df[col].dropna().unique()
-                # If there are 5 or fewer unique strings, it's likely a strict category
-                if len(unique_vals) <= 5:
-                    # Escape strings just in case, and format into a regex OR group
-                    clean_vals = [str(v).replace(r'(', r'\(').replace(r')', r'\)') for v in unique_vals]
+                # Only include values that appear more than 10% of the time
+                counts = df[col].value_counts(normalize=True)
+                top_tier = counts[counts > 0.10].index.tolist()
+                
+                # If there are 1-5 dominant categories, lock them in as the pattern
+                if 0 < len(top_tier) <= 5:
+                    clean_vals = [str(v).replace(r'(', r'\(').replace(r')', r'\)') for v in top_tier]
                     pattern = f"^({'|'.join(clean_vals)})$"
                     config["patterns"][col] = pattern
                     
@@ -58,7 +59,7 @@ class AnomalyDetector:
     
     @classmethod
     def Basic(cls, df: pd.DataFrame, **kwargs) -> AnomalyDetector:
-        """Runs the standard core checks (Rare, Null, Duplicates, Outliers, Types, Logic)."""
+        """Runs standard core checks (Rare, Null, Duplicates, Outliers, Types, Logic)."""
         return cls(df, mode='basic', kwargs=kwargs)
 
     @classmethod
@@ -88,4 +89,5 @@ class AnomalyDetector:
             # The contamination parameter can also be overridden via kwargs
             findings["auto_multivariate"] = check_auto_multivariate(self.df, self.config.get('contamination', 0.02))
             
-        return AnomalyReport(findings, self.df.shape, self.mode)
+        # Return the report, passing self.df so visualize() can access the data
+        return AnomalyReport(self.df, findings, self.mode)
