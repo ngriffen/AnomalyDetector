@@ -19,40 +19,43 @@ class AnomalyDetector:
         self.mode = mode.lower()
         self.config = kwargs or {}
 
-    # --- CONFIGURATION GENERATOR ---
-
+    # --- 1. CONFIGURATION GENERATOR ---
     @staticmethod
     def suggest_config(df: pd.DataFrame) -> dict:
         """
-        Analyzes the dataframe to suggest a starting configuration
-        based on current statistical data distributions.
+        Analyzes the dataframe to suggest a starting configuration.
         """
+        auto_rare = max(2, int(len(df) * 0.01))
+        
         config = {
-            "rare_threshold": max(2, int(len(df) * 0.01)), # 1% of data or min 2
-            "null_threshold_pct": 10.0,
+            "global_thresholds": {
+                "rare_threshold": auto_rare,
+                "null_threshold_pct": 10.0,
+                "contamination": 0.02
+            },
             "logical_rules": {},
             "patterns": {}
         }
         
         for col in df.columns:
-            # 1. Suggest ranges for numeric columns using Percentile Clipping (5th to 95th)
-            # This ensures the "Ideal" baseline ignores existing extreme outliers.
+            # Numeric Logic
             if pd.api.types.is_numeric_dtype(df[col]):
                 low, high = df[col].quantile([0.05, 0.95])
-                config["logical_rules"][col] = {"min": float(low), "max": float(high)}
-                
-            # 2. Suggest Regex patterns for categorical lists
+                config["logical_rules"][col] = {
+                    "min": float(round(low, 2)), 
+                    "max": float(round(high, 2)),
+                    "info": f"Standard range (5th-95th percentile)"
+                }
+            # Categorical Logic
             elif pd.api.types.is_object_dtype(df[col]):
-                # Only include values that appear more than 10% of the time
                 counts = df[col].value_counts(normalize=True)
                 top_tier = counts[counts > 0.10].index.tolist()
-                
-                # If there are 1-5 dominant categories, lock them in as the pattern
                 if 0 < len(top_tier) <= 5:
-                    clean_vals = [str(v).replace(r'(', r'\(').replace(r')', r'\)') for v in top_tier]
-                    pattern = f"^({'|'.join(clean_vals)})$"
-                    config["patterns"][col] = pattern
-                    
+                    pattern = f"^({'|'.join([str(v) for v in top_tier])})$"
+                    config["patterns"][col] = {
+                        "regex": pattern,
+                        "info": f"Top categories: {top_tier}"
+                    }
         return config
 
     # --- FACTORY METHODS ---
