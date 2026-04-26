@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
+import numpy as np
 
 class AnomalyReport:
     def __init__(self, df: pd.DataFrame, findings: dict[str, list[dict]], mode: str) -> None:
@@ -38,7 +39,6 @@ class AnomalyReport:
                         suspects = detail.get('suspects', [])
                         tag = detail.get('tag', 'Unknown')
                         
-                        # Formatting the suspect string based on interaction type
                         if tag == "Multivariate Mix":
                             sus_label = f"{YEL}[Complex Interaction: {', '.join(suspects)}]{END}"
                         else:
@@ -48,7 +48,7 @@ class AnomalyReport:
                         lines.append(f"    - Row {detail['row']:>4}: {sus_label}")
                         lines.append(f"               Data: {row_str}")
 
-        # --- BASIC Detailed Sections (1-6) ---
+        # --- BASIC Detailed Sections ---
         if self.mode in ['basic', 'full']:
             # 1. Rare Values
             rv = self.findings.get('rare_values', [])
@@ -114,131 +114,102 @@ class AnomalyReport:
                 for item in lo:
                     lines.append(f"  • '{item['column']}' | {RED}{item['issue']}{END} ({item['count']} total)")
 
-        # --- EXECUTIVE SUMMARY BLOCK ---
+        # --- EXECUTIVE SUMMARY ---
         lines.append(f"\n{HEADER}--- ANOMALY SUMMARY ---{END}")
         f = self.findings
-
         if self.mode in ['basic', 'full']:
-            # Pre-calculate counts to keep the f-strings clean and readable
             rv_cnt = len(f.get('rare_values', []))
             nv_cnt = len(f.get('null_values', []))
             dv_cnt = len(f.get('duplicate_rows', []))
             out_cnt = sum(item['count'] for item in f.get('numerical_outliers', []))
             ti_cnt = len(f.get('type_inconsistency', []))
             log_cnt = sum(item['count'] for item in f.get('logical_outliers', []))
-
             lines.append(f"  [1] Rare Values:    {'✓ Pass' if rv_cnt == 0 else f'{rv_cnt:<3}'}")
             lines.append(f"  [2] Null Values:    {'✓ Pass' if nv_cnt == 0 else f'{nv_cnt:<3}'}")
             lines.append(f"  [3] Duplicates:     {'✓ Pass' if dv_cnt == 0 else f'{dv_cnt:<3}'}")
             lines.append(f"  [4] Outliers:       {'✓ Pass' if out_cnt == 0 else f'{out_cnt:<3}'}")
             lines.append(f"  [5] Mixed Types:    {'✓ Pass' if ti_cnt == 0 else f'{ti_cnt:<3}'}")
             lines.append(f"  [6] Logic Rules:    {'✓ Pass' if log_cnt == 0 else f'{log_cnt:<3}'}")
-
         if self.mode in ['auto', 'full']:
             am_data = f.get('auto_multivariate', [])
-            # Grab count from first item of findings list if it exists
             auto_cnt = am_data[0]['count'] if am_data and 'count' in am_data[0] else 0
             lines.append(f"  [AUTO] Machine ML:  {'✓ Pass' if auto_cnt == 0 else f'{auto_cnt:<3}'}")
 
         lines.append(f"{HEADER}{'='*80}{END}")
         return "\n".join(lines)
 
-    def __str__(self) -> str:
-        return self.summary()
-
     def visualize(self) -> None:
         """Generates a visual dashboard of the detected anomalies."""
         sns.set_theme(style="whitegrid")
         
-        # Figure out how many plots we need based on what was found
-        plots_needed = []
-        if self.findings.get('null_values'): plots_needed.append('nulls')
-        if self.findings.get('numerical_outliers'): plots_needed.append('outliers')
-        if self.findings.get('auto_multivariate'): plots_needed.append('auto')
-        if self.findings.get('rare_values'): plots_needed.append('rare')
+        # Determine which plots to generate
+        plots_to_make = []
+        if self.findings.get('null_values'): plots_to_make.append('nulls')
+        if self.findings.get('numerical_outliers'): plots_to_make.append('outliers')
+        if self.findings.get('rare_values'): plots_to_make.append('rare')
+        if self.findings.get('auto_multivariate'): plots_to_make.append('auto')
 
-        if not plots_needed:
-            print("No significant anomalies to visualize. Data looks good!")
+        if not plots_to_make:
+            print("No anomalies found to visualize.")
             return
 
-        # Setup dynamic grid layout
-        num_plots = len(plots_needed)
-        cols = 2
+        # FIXED GRID LOGIC: Always flattens axes into a usable list
+        num_plots = len(plots_to_make)
+        cols = 2 if num_plots > 1 else 1
         rows = math.ceil(num_plots / cols)
-        fig, axes = plt.subplots(rows, cols, figsize=(15, 6 * rows))
-        axes = axes.flatten() if num_plots > 1 else [axes]
-
+        
+        fig, axes = plt.subplots(rows, cols, figsize=(8 * cols, 6 * rows), squeeze=False)
+        axes_list = axes.flatten()
         idx = 0
 
-        # --- 1. Plot Null Values ---
-        if 'nulls' in plots_needed:
-            ax = axes[idx]
-            nulls = self.findings['null_values']
-            cols_with_nulls = [item['column'] for item in nulls]
-            pcts = [item['null_pct'] for item in nulls]
-            
-            sns.barplot(x=pcts, y=cols_with_nulls, ax=ax, palette="Reds_r")
-            ax.set_title("Missing Data Percentage", fontsize=14, fontweight='bold')
-            ax.set_xlabel("% Missing")
+        # 1. Null Values
+        if 'nulls' in plots_to_make:
+            ax = axes_list[idx]
+            null_data = self.findings['null_values']
+            sns.barplot(x=[i['null_pct'] for i in null_data], y=[i['column'] for i in null_data], ax=ax, palette="Reds_r")
+            ax.set_title("Missing Data Percentage", fontweight='bold')
             ax.set_xlim(0, 100)
             idx += 1
 
-        # --- 2. Plot Outliers (Boxplots) ---
-        if 'outliers' in plots_needed:
-            ax = axes[idx]
-            outliers = self.findings['numerical_outliers']
-            # Plot the top 3 columns with the most outliers to prevent clutter
-            top_cols = [item['column'] for item in sorted(outliers, key=lambda x: x['count'], reverse=True)[:3]]
-            
-            # Melt dataframe for easy seaborn boxplot
-            melted_df = self.df[top_cols].melt(var_name='Column', value_name='Value')
-            sns.boxplot(data=melted_df, x='Value', y='Column', ax=ax, palette="Set2", flierprops={"marker": "x", "markerfacecolor": "red"})
-            ax.set_title("Statistical Outliers (IQR)", fontsize=14, fontweight='bold')
+        # 2. Outliers
+        if 'outliers' in plots_to_make:
+            ax = axes_list[idx]
+            out_cols = [i['column'] for i in self.findings['numerical_outliers'][:3]]
+            melted = self.df[out_cols].melt()
+            sns.boxplot(data=melted, x='value', y='variable', ax=ax, palette="Set2")
+            ax.set_title("Statistical Outliers (Top 3 Columns)", fontweight='bold')
             idx += 1
 
-        # --- 3. Plot Rare Values ---
-        if 'rare' in plots_needed:
-            ax = axes[idx]
-            rares = self.findings['rare_values']
-            # Just take the first categorical column with rare values as an example
-            target_col = rares[0]['column']
-            
-            sns.countplot(y=self.df[target_col], ax=ax, order=self.df[target_col].value_counts().index, palette="magma")
-            ax.set_title(f"Category Frequencies: '{target_col}'", fontsize=14, fontweight='bold')
-            ax.set_xlabel("Count")
+        # 3. Rare Values
+        if 'rare' in plots_to_make:
+            ax = axes_list[idx]
+            target = self.findings['rare_values'][0]['column']
+            sns.countplot(y=self.df[target], ax=ax, order=self.df[target].value_counts().index, palette="viridis")
+            ax.set_title(f"Rare Values in '{target}'", fontweight='bold')
             idx += 1
 
-        # --- 4. Plot Auto Multivariate (Scatter Plot) ---
-        if 'auto' in plots_needed:
-            ax = axes[idx]
-            am = self.findings['auto_multivariate'][0]
+        # 4. Auto ML (Multivariate)
+        if 'auto' in plots_to_make:
+            ax = axes_list[idx]
+            am_details = self.findings['auto_multivariate'][0]['details']
+            anomaly_idx = [d['row'] for d in am_details]
             
-            # Try to find the best two numeric columns to plot against each other
-            num_cols = self.df.select_dtypes(include='number').columns.tolist()
+            num_cols = self.df.select_dtypes(include=[np.number]).columns.tolist()
             if len(num_cols) >= 2:
-                x_col, y_col = num_cols[0], num_cols[1]
-                
-                # Get the indices of the anomalies
-                anomaly_indices = [detail['row'] for detail in am['details']]
-                
-                # Create a color mask
-                colors = ['red' if i in anomaly_indices else 'blue' for i in self.df.index]
-                sizes = [100 if i in anomaly_indices else 20 for i in self.df.index]
-                
-                ax.scatter(self.df[x_col], self.df[y_col], c=colors, s=sizes, alpha=0.6, edgecolors='w')
-                ax.set_title(f"Multivariate Anomalies ({x_col} vs {y_col})", fontsize=14, fontweight='bold')
-                ax.set_xlabel(x_col)
-                ax.set_ylabel(y_col)
-                
-                # Custom legend
-                from matplotlib.patches import Patch
-                legend_elements = [Patch(facecolor='blue', label='Normal'), Patch(facecolor='red', label='Anomaly')]
-                ax.legend(handles=legend_elements, loc='upper right')
+                x, y = num_cols[0], num_cols[1]
+                # Highlighting anomalies in red
+                colors = ['#ff4d4d' if i in anomaly_idx else '#4d79ff' for i in self.df.index]
+                ax.scatter(self.df[x], self.df[y], c=colors, alpha=0.6, edgecolors='w', s=50)
+                ax.set_title(f"ML Detection: {x} vs {y}", fontweight='bold')
+                ax.set_xlabel(x); ax.set_ylabel(y)
             idx += 1
 
-        # Hide any unused subplots
-        for i in range(idx, len(axes)):
-            fig.delaxes(axes[i])
+        # Remove extra empty subplots
+        for i in range(idx, len(axes_list)):
+            fig.delaxes(axes_list[i])
 
         plt.tight_layout()
         plt.show()
+
+    def __str__(self) -> str:
+        return self.summary()
