@@ -53,6 +53,9 @@ print("RUNNING STEP 1: BASIC MODE")
 basic_report = AnomalyDetector.Basic(df, **config).run()
 print(basic_report.summary())
 
+# Display plots for basic statistical checks
+basic_report.visualize()
+
 #AUTO MODE
 print("\n\nRUNNING STEP 2: AUTO MODE")
 # Uses ML (Isolation Forest) to find weird row combinations
@@ -60,8 +63,14 @@ print("\n\nRUNNING STEP 2: AUTO MODE")
 auto_report = AnomalyDetector.Auto(df, contamination=0.05).run()
 print(auto_report.summary())
 
+# Display plots for the Machine Learning results
+auto_report.visualize()
+
 #FULL MODE
 print("\n\nRUNNING STEP 3: FULL MODE")
 # Runs EVERYTHING: Rules + Statistics + Machine Learning
 full_report = AnomalyDetector.Full(df, **config).run()
 print(full_report.summary())
+
+# Display the comprehensive dashboard
+full_report.visualize()
